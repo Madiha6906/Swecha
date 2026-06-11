@@ -98,14 +98,17 @@
                 Your batting, bowling, fielding, and fitness scores are all strong.
 
             </p>
+            
 
             <p>
 
-                You are one of the players trying to make the team.
+                Enter your name to join the team.
 
             </p>
 
-            <button onclick="showStory()">
+            <input id="playerNameInput" type="text" placeholder="Your name" maxlength="20">
+
+            <button onclick="startGame()">
 
                 ▶ Start Game
 
@@ -127,9 +130,7 @@
 
             </h2>
 
-            <p>
-
-                Today you are a player trying to be selected for the team.
+            <p id="storyGreeting">
 
             </p>
 
@@ -176,6 +177,10 @@
                 🏏 PLAYER TRIALS
 
             </h2>
+
+            <p id="trialGreeting">
+
+            </p>
 
             <p>
 
@@ -248,6 +253,8 @@
             </div>
 
             <p id="announcementQuestion">
+
+            </p>
 
                 Is your name there?
 
@@ -351,6 +358,10 @@
 
             </h2>
 
+            <p id="selectionMessage">
+
+            </p>
+
             <p>
 
                 Select eleven players for the team using the trial scores.
@@ -363,7 +374,25 @@
 
             </p>
 
-            <div id="playerList">
+            <div class="selection-area">
+
+                <div class="player-pool" id="playerPool"></div>
+
+                <div class="team-bin">
+
+                    <h3>Your Team Bin</h3>
+
+                    <p>Drag 11 players here to select your squad.</p>
+
+                    <div id="binDropZone" class="dropZone">
+
+                        Drop players here
+
+                    </div>
+
+                    <div id="selectedCount" class="selectedCount">Selected: 0 / 11</div>
+
+                </div>
 
             </div>
 

@@ -115,15 +115,34 @@ fitness:81
 
 // Calculate totals
 
-players.forEach(p=>{
-p.total=p.bat+p.bowl+p.fitness;
-});
+function calculateTotals(list) {
+    list.forEach(p => {
+        p.total = p.bat + p.bowl + p.fitness;
+    });
+}
+
+calculateTotals(players);
+
+const originalPlayers = players.map(player => ({
+    ...player
+}));
+
+function resetPlayers() {
+    players.splice(0, players.length, ...originalPlayers.map(player => ({
+        ...player
+    })));
+    calculateTotals(players);
+    selectedPlayers = [];
+    userPlayer = null;
+}
 
 // Game State
 
 let score=0;
 let fairness=100;
 let selectedPlayers=[];
+let playerName="Player";
+let userPlayer = null;
 
 const screen=document.getElementById("gameScreen");
 
@@ -158,11 +177,57 @@ updateMeter();
 
 }
 
+// Set player name and begin the story
+
+function startGame(){
+
+const input=document.getElementById("playerNameInput");
+
+const name=input ? input.value.trim() : "";
+
+if(!name){
+
+alert("Please enter your name to begin the game.");
+
+return;
+
+}
+
+playerName=name;
+
+resetPlayers();
+
+const userId = originalPlayers.length + 1;
+
+userPlayer = {
+    id: userId,
+    name: playerName,
+    bat: 72,
+    bowl: 74,
+    fitness: 73
+};
+
+userPlayer.total = userPlayer.bat + userPlayer.bowl + userPlayer.fitness;
+
+players.unshift(userPlayer);
+
+showStory();
+
+}
+
 // Story
 
 function showStory(){
 
 loadTemplate("storyTemplate");
+
+const storyGreeting=document.getElementById("storyGreeting");
+
+if(storyGreeting){
+
+storyGreeting.innerHTML=`Hello ${playerName}!`;
+
+}
 
 }
 
@@ -171,6 +236,14 @@ loadTemplate("storyTemplate");
 function showTrials(){
 
 loadTemplate("trialTemplate");
+
+const trialGreeting=document.getElementById("trialGreeting");
+
+if(trialGreeting){
+
+trialGreeting.innerHTML=`${playerName}, this is how everyone performed in the trials.`;
+
+}
 
 loadTrialTable();
 
@@ -181,6 +254,8 @@ function showAnnouncement(){
 loadTemplate("announcementTemplate");
 
 const list = document.getElementById("announcementList");
+
+const announcementQuestion=document.getElementById("announcementQuestion");
 
 const sorted = [...players].sort((a, b) => b.total - a.total);
 
@@ -193,6 +268,14 @@ list.innerHTML = players.map(player => {
     return `<li>${player.name}${mark}</li>`;
 
 }).join("");
+
+if(announcementQuestion){
+    if(userPlayer && selectedIds.has(userPlayer.id)){
+        announcementQuestion.innerText = `Great news, ${playerName}! You're one of the 11 selected.`;
+    } else {
+        announcementQuestion.innerText = `Oh no, ${playerName}. You're not in the 11 selected this time.`;
+    }
+}
 
 }
 
@@ -212,7 +295,17 @@ function showFairSelectionIntro(){
 
 loadTemplate("selectionTemplate");
 
+const selectionMessage=document.getElementById("selectionMessage");
+
+if(selectionMessage){
+
+selectionMessage.innerText=`${playerName}, drag the best 11 players into the team bin. Your name is part of the list too.`;
+
+}
+
 loadPlayers();
+
+initSelectionBin();
 
 }
 
@@ -261,22 +354,17 @@ function showSelection() {
 
 function loadPlayers() {
 
-    const list = document.getElementById("playerList");
+    const pool = document.getElementById("playerPool");
 
-    list.innerHTML = "";
+    if(!pool) return;
+
+    pool.innerHTML = "";
 
     players.forEach(player => {
 
-        list.innerHTML += `
+        pool.innerHTML += `
 
-        <div class="playerCard">
-
-            <label>
-
-            <input
-            type="checkbox"
-            value="${player.id}"
-            class="playerCheck">
+        <div class="playerCard player-card" draggable="true" data-player-id="${player.id}">
 
             <h3>${player.name}</h3>
 
@@ -294,13 +382,15 @@ function loadPlayers() {
 
             💪 Fitness : ${player.fitness}
 
-            </label>
-
         </div>
 
         `;
 
     });
+
+    attachPlayerEvents();
+
+    renderSelectionUI();
 
 }
 
@@ -310,29 +400,173 @@ function loadPlayers() {
 
 function submitSelection() {
 
-    selectedPlayers = [];
+    if (selectedPlayers.length !== 11) {
 
-    const checks = document.querySelectorAll(".playerCheck");
-
-    checks.forEach(box => {
-
-        if (box.checked) {
-
-            selectedPlayers.push(parseInt(box.value));
-
-        }
-
-    });
-
-    if (selectedPlayers.length != 11) {
-
-        alert("Please select exactly 11 players.");
+        alert(`Please drag exactly 11 players into the team bin, ${playerName}.`);
 
         return;
 
     }
 
     evaluateSelection();
+
+}
+
+function attachPlayerEvents() {
+
+    const cards = document.querySelectorAll(".player-card");
+
+    cards.forEach(card => {
+
+        card.addEventListener("dragstart", event => {
+
+            event.dataTransfer.setData("text/plain", card.dataset.playerId);
+
+            card.classList.add("dragging");
+
+        });
+
+        card.addEventListener("dragend", () => {
+
+            card.classList.remove("dragging");
+
+        });
+
+        card.addEventListener("click", () => {
+
+            const id = Number(card.dataset.playerId);
+
+            if (selectedPlayers.includes(id)) {
+
+                removePlayerFromSelection(id);
+
+            } else {
+
+                selectPlayer(id);
+
+            }
+
+        });
+
+    });
+
+}
+
+function initSelectionBin() {
+
+    const bin = document.getElementById("binDropZone");
+
+    if (!bin) return;
+
+    bin.addEventListener("dragover", event => {
+
+        event.preventDefault();
+
+        bin.classList.add("active");
+
+    });
+
+    bin.addEventListener("dragleave", () => {
+
+        bin.classList.remove("active");
+
+    });
+
+    bin.addEventListener("drop", event => {
+
+        event.preventDefault();
+
+        bin.classList.remove("active");
+
+        const playerId = Number(event.dataTransfer.getData("text/plain"));
+
+        selectPlayer(playerId);
+
+    });
+
+    renderSelectionUI();
+
+}
+
+function selectPlayer(id) {
+
+    if (!selectedPlayers.includes(id)) {
+
+        if (selectedPlayers.length >= 11) {
+
+            alert("Your team bin is full. Remove a player before adding another.");
+
+            return;
+
+        }
+
+        selectedPlayers.push(id);
+
+        renderSelectionUI();
+
+    }
+
+}
+
+function removePlayerFromSelection(id) {
+
+    selectedPlayers = selectedPlayers.filter(playerId => playerId !== id);
+
+    renderSelectionUI();
+
+}
+
+function renderSelectionUI() {
+
+    const count = document.getElementById("selectedCount");
+
+    if (count) {
+
+        count.textContent = `Selected: ${selectedPlayers.length} / 11`;
+
+    }
+
+    const bin = document.getElementById("binDropZone");
+
+    if (bin) {
+
+        if (selectedPlayers.length === 0) {
+
+            bin.innerHTML = "Drop players here";
+
+        } else {
+
+            bin.innerHTML = selectedPlayers.map(id => {
+
+                const player = players.find(p => p.id === id);
+
+                return `<div class="selected-chip">${player ? player.name : "Unknown"}</div>`;
+
+            }).join("");
+
+        }
+
+    }
+
+    document.querySelectorAll(".player-card").forEach(card => {
+
+        const id = Number(card.dataset.playerId);
+
+        if (selectedPlayers.includes(id)) {
+
+            card.classList.add("selected");
+
+            card.style.opacity = "0.5";
+
+        } else {
+
+            card.classList.remove("selected");
+
+            card.style.opacity = "1";
+
+        }
+
+    });
 
 }
 
