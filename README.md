@@ -18,9 +18,8 @@ It shows how a player, despite performing well, may not get selected in the play
 
 ## ❗ Problem Statement
 
-In many situations, especially in team selection, decisions are not always based on performance. Instead, **bias, assumptions, and familiarity influence choices**, leading to prejudice and discrimination.
-
-This results in deserving players being ignored and losing opportunities, while teams also suffer by not selecting the best talent. There is a need to ensure **fair and transparent selection based on merit**.
+Problem statement : 
+In many cricket teams, discrimination occurs when players are treated unfairly due to bias, favoritism, or prejudice. Some players may not get equal opportunities to play matches, participate in decisions, or showcase their skills. This leads to low confidence, reduced team spirit, and unfair outcomes. The problem is to ensure that every player is treated equally and given a fair chance based on their abilities rather than personal bias.
 
 ---
 
